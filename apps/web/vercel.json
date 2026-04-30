@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd ../.. && pnpm build --filter=@flowly/web",
+  "installCommand": "cd ../.. && pnpm install",
+  "crons": [
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
