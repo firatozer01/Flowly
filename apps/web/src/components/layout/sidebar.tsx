@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LayoutDashboard, CreditCard, Bell, Settings, Mail } from "lucide-react";
+import { UserButton } from "@clerk/nextjs";
 import { LogoMark } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,7 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/10 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex-shrink-0" />
+        <UserButton afterSignOutUrl="/" />
         <span className="text-sm text-white/50">Hesabım</span>
       </div>
     </aside>
