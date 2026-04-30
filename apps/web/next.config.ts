@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@flowly/subscriptions-db", "@flowly/shared"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "logo.clearbit.com" },

@@ -7,9 +7,15 @@ import { SubscriptionCard } from "@/components/subscriptions/subscription-card";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-  const subs = userId
-    ? await db.select().from(subscriptions).where(eq(subscriptions.userId, userId))
-    : [];
+  let subs: typeof subscriptions.$inferSelect[] = [];
+
+  if (userId) {
+    try {
+      subs = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+    } catch (err) {
+      console.error("DB error on dashboard:", err);
+    }
+  }
 
   const upcoming = subs.filter((s) => {
     const days = Math.ceil((new Date(s.nextBillingDate).getTime() - Date.now()) / 86400000);
