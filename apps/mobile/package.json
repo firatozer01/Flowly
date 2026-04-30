@@ -9,6 +9,7 @@
     "ios": "expo start --ios"
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^2.7.2",
     "@expo/vector-icons": "^14.1.0",
     "expo": "~53.0.0",
     "expo-blur": "~14.1.4",

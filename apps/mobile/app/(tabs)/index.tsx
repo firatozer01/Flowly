@@ -4,7 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Bell } from "lucide-react-native";
+import { Bell, LogOut } from "lucide-react-native";
+import { useAuth } from "@clerk/clerk-expo";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { api } from "@/lib/api";
@@ -24,21 +25,20 @@ interface Sub {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { getToken, signOut } = useAuth();
   const [subs, setSubs] = useState<Sub[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const handleNotificationTap = useCallback(
-    (subscriptionId: string) => {
-      router.push(`/subscription/${subscriptionId}`);
-    },
+    (subscriptionId: string) => { router.push(`/subscription/${subscriptionId}`); },
     [router]
   );
-
   usePushNotifications(handleNotificationTap);
 
   async function load() {
     try {
-      const data = await api.subscriptions.list();
+      const token = await getToken();
+      const data = await api.subscriptions.list(token);
       setSubs(data);
     } catch {}
   }
@@ -59,7 +59,6 @@ export default function DashboardScreen() {
     if (s.billingCycle === "weekly") return sum + a * 4.33;
     return sum;
   }, 0);
-
   const upcoming = active.filter((s) => {
     const d = Math.ceil((new Date(s.nextBillingDate).getTime() - Date.now()) / 86400000);
     return d >= 0 && d <= 7;
@@ -72,55 +71,33 @@ export default function DashboardScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f8ef7" />}
       >
+        {/* Header */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <Text style={{ color: "#fff", fontSize: 26, fontWeight: "800", letterSpacing: -0.5 }}>Flowly</Text>
+          <TouchableOpacity onPress={() => signOut()} style={{ padding: 8 }}>
+            <LogOut size={20} color="rgba(255,255,255,0.4)" />
+          </TouchableOpacity>
+        </View>
+
         {/* Hero kart */}
         <LinearGradient
           colors={["rgba(79,142,247,0.25)", "rgba(167,139,250,0.15)", "rgba(34,211,238,0.08)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ borderRadius: 24, marginBottom: 20 }}
         >
-          <BlurView
-            intensity={20}
-            tint="dark"
-            style={{
-              borderRadius: 24,
-              padding: 24,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.12)",
-              overflow: "hidden",
-            }}
-          >
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 4 }}>
-              Bu ay toplam harcama
-            </Text>
+          <BlurView intensity={20} tint="dark" style={{ borderRadius: 24, padding: 24, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
+            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 4 }}>Bu ay toplam harcama</Text>
             <Text style={{ color: "#fff", fontSize: 40, fontWeight: "800", letterSpacing: -1 }}>
               {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(monthlyTotal)}
             </Text>
-
             <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
               {[
                 { label: "Aktif Abonelik", value: active.length, color: "#4f8ef7" },
                 { label: "Bu Hafta", value: upcoming.length, color: upcoming.length > 0 ? "#fb923c" : "#22d3ee" },
               ].map((stat) => (
-                <BlurView
-                  key={stat.label}
-                  intensity={15}
-                  tint="dark"
-                  style={{
-                    flex: 1,
-                    borderRadius: 16,
-                    padding: 14,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.08)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Text style={{ color: stat.color, fontSize: 24, fontWeight: "700" }}>
-                    {stat.value}
-                  </Text>
-                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>
-                    {stat.label}
-                  </Text>
+                <BlurView key={stat.label} intensity={15} tint="dark" style={{ flex: 1, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <Text style={{ color: stat.color, fontSize: 24, fontWeight: "700" }}>{stat.value}</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>{stat.label}</Text>
                 </BlurView>
               ))}
             </View>
@@ -132,37 +109,27 @@ export default function DashboardScreen() {
           <View style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <Bell size={15} color="#fb923c" />
-              <Text style={{ color: "#fb923c", fontWeight: "700", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                Bu Hafta Yenileniyor
-              </Text>
+              <Text style={{ color: "#fb923c", fontWeight: "700", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.8 }}>Bu Hafta Yenileniyor</Text>
             </View>
             {upcoming.map((sub) => (
-              <SubscriptionCard
-                key={sub.id}
-                sub={sub}
-                onPress={() => router.push(`/subscription/${sub.id}`)}
-              />
+              <SubscriptionCard key={sub.id} sub={sub} onPress={() => router.push(`/subscription/${sub.id}`)} />
             ))}
           </View>
         )}
 
-        {/* Tüm abonelikler */}
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16, marginBottom: 12 }}>
-          Tüm Abonelikler
-        </Text>
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16, marginBottom: 12 }}>Tüm Abonelikler</Text>
         {active.length === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: 40 }}>
             <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
               Henüz abonelik yok
             </Text>
+            <Text style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 8 }}>
+              Web uygulamasından ekleyebilirsin
+            </Text>
           </View>
         ) : (
           active.map((sub) => (
-            <SubscriptionCard
-              key={sub.id}
-              sub={sub}
-              onPress={() => router.push(`/subscription/${sub.id}`)}
-            />
+            <SubscriptionCard key={sub.id} sub={sub} onPress={() => router.push(`/subscription/${sub.id}`)} />
           ))
         )}
       </ScrollView>
