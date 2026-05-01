@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Scan, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Mail, Scan, CheckCircle, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -23,7 +23,7 @@ export default function GmailPage() {
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState<ScannedItem[]>([]);
   const [imported, setImported] = useState(false);
-  const [connected, setConnected] = useState(false);
+  const [connected, setConnected] = useState<boolean | null>(null); // null = yükleniyor
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -31,7 +31,16 @@ export default function GmailPage() {
       setConnected(true);
       toast.success("Gmail başarıyla bağlandı!");
       window.history.replaceState({}, "", "/gmail");
+      return;
     }
+    if (params.get("error")) {
+      toast.error("Gmail bağlantısı başarısız, tekrar deneyin");
+      window.history.replaceState({}, "", "/gmail");
+    }
+    fetch("/api/gmail/status")
+      .then((r) => r.json())
+      .then((d) => setConnected(!!d.connected))
+      .catch(() => setConnected(false));
   }, []);
 
   async function handleConnect() {
@@ -53,11 +62,7 @@ export default function GmailPage() {
       const res = await fetch("/api/gmail/scan", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        if (data.error === "Gmail bağlı değil") {
-          toast.error("Önce Gmail'i bağlayın");
-        } else {
-          toast.error("Tarama başarısız");
-        }
+        toast.error("Tarama başarısız");
         return;
       }
       setScanned(data.items || []);
@@ -86,55 +91,65 @@ export default function GmailPage() {
       {/* Bağlantı kartı */}
       <GlassCard>
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-            <Mail size={22} className="text-red-400" />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${connected ? "bg-green-500/20" : "bg-red-500/20"}`}>
+            {connected === null ? (
+              <Loader2 size={22} className="text-white/40 animate-spin" />
+            ) : connected ? (
+              <CheckCircle size={22} className="text-green-400" />
+            ) : (
+              <Mail size={22} className="text-red-400" />
+            )}
           </div>
           <div className="flex-1">
-            <h3 className="text-white font-semibold mb-1">Gmail Hesabı Bağla</h3>
+            <h3 className="text-white font-semibold mb-1">
+              {connected ? "Gmail Bağlandı" : "Gmail Hesabı Bağla"}
+            </h3>
             <p className="text-white/40 text-sm mb-4">
-              Flowly yalnızca okuma izni ister. Şifrenizi görmez, e-posta içeriklerinizi
-              saklamaz — sadece fatura bilgilerini tarar.
+              {connected
+                ? "Gmail hesabınız bağlı. Abonelikleri taramaya başlayabilirsiniz."
+                : "Flowly yalnızca okuma izni ister. Şifrenizi görmez, e-posta içeriklerinizi saklamaz — sadece fatura bilgilerini tarar."}
             </p>
-            <div className="flex gap-3">
-              <GlassButton
-                variant="primary"
-                onClick={handleConnect}
-                loading={connecting}
-              >
-                <ExternalLink size={16} />
-                {connected ? "Yeniden Bağla" : "Google ile Bağla"}
-              </GlassButton>
-              {connected && (
-                <div className="flex items-center gap-2 text-green-400 text-sm">
-                  <CheckCircle size={16} />
-                  Bağlandı
-                </div>
-              )}
-            </div>
+            <GlassButton
+              variant={connected ? "ghost" : "primary"}
+              onClick={handleConnect}
+              loading={connecting}
+            >
+              <ExternalLink size={16} />
+              {connected ? "Farklı Hesapla Bağla" : "Google ile Bağla"}
+            </GlassButton>
           </div>
         </div>
       </GlassCard>
 
-      {/* Tarama */}
+      {/* Tarama kartı */}
       <GlassCard>
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-            <Scan size={22} className="text-purple-400" />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${connected ? "bg-purple-500/20" : "bg-white/5"}`}>
+            <Scan size={22} className={connected ? "text-purple-400" : "text-white/20"} />
           </div>
           <div className="flex-1">
-            <h3 className="text-white font-semibold mb-1">Abonelik Tara</h3>
+            <h3 className={`font-semibold mb-1 ${connected ? "text-white" : "text-white/40"}`}>
+              Abonelik Tara
+            </h3>
             <p className="text-white/40 text-sm mb-4">
-              Son 90 günün fatura e-postalarını tarar. Bulunan abonelikler otomatik
-              eklenir, siz onaylarsınız.
+              Son 90 günün fatura e-postalarını tarar. Bulunan abonelikler otomatik eklenir.
             </p>
-            <GlassButton
-              variant="primary"
-              onClick={handleScan}
-              loading={scanning}
-            >
-              <Scan size={16} />
-              {scanning ? "Taranıyor..." : "Taramayı Başlat"}
-            </GlassButton>
+            {connected === false ? (
+              <div className="flex items-center gap-2 text-amber-400/80 text-sm bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
+                <AlertCircle size={15} />
+                Taramak için önce Gmail hesabınızı bağlayın
+              </div>
+            ) : (
+              <GlassButton
+                variant="primary"
+                onClick={handleScan}
+                loading={scanning}
+                disabled={!connected}
+              >
+                <Scan size={16} />
+                {scanning ? "Taranıyor..." : "Taramayı Başlat"}
+              </GlassButton>
+            )}
           </div>
         </div>
       </GlassCard>
@@ -156,15 +171,13 @@ export default function GmailPage() {
                 className="glass-card flex items-center gap-3"
               >
                 {item.domain && (
-                  <div className="w-9 h-9 rounded-lg overflow-hidden glass flex items-center justify-center flex-shrink-0">
-                    <Image
-                      src={getLogoUrl(item.domain)}
-                      alt={item.name}
-                      width={28}
-                      height={28}
-                      className="object-contain"
-                    />
-                  </div>
+                  <Image
+                    src={getLogoUrl(item.domain)}
+                    alt={item.name}
+                    width={32}
+                    height={32}
+                    className="rounded-lg object-contain flex-shrink-0"
+                  />
                 )}
                 <div className="flex-1">
                   <div className="text-white text-sm font-medium">{item.name}</div>
@@ -183,7 +196,7 @@ export default function GmailPage() {
         <GlassCard className="text-center py-8">
           <AlertCircle size={32} className="text-white/30 mx-auto mb-3" />
           <p className="text-white/40">
-            Fatura e-postası bulunamadı. Gmail'de farklı bir hesap deneyin veya
+            Fatura e-postası bulunamadı. Gmail&apos;de farklı bir hesap deneyin veya
             abonelikleri manuel ekleyin.
           </p>
         </GlassCard>
