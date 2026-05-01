@@ -37,6 +37,7 @@ export async function deleteSubscription(id: string, userId: string) {
 }
 
 export async function getUpcomingRenewals(userId: string, days = 7) {
+  const now = new Date();
   const future = new Date();
   future.setDate(future.getDate() + days);
   return db
@@ -46,7 +47,8 @@ export async function getUpcomingRenewals(userId: string, days = 7) {
       and(
         eq(subscriptions.userId, userId),
         eq(subscriptions.isActive, true),
-        gte(subscriptions.nextBillingDate, new Date()),
+        gte(subscriptions.nextBillingDate, now),
+        lte(subscriptions.nextBillingDate, future),
       )
     )
     .orderBy(subscriptions.nextBillingDate);
