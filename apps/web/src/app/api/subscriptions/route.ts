@@ -35,12 +35,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const sub = await createSubscription({
-    ...parsed.data,
-    userId,
-    nextBillingDate: new Date(parsed.data.nextBillingDate),
-    amount: parsed.data.amount.toString(),
-  });
-
-  return NextResponse.json(sub, { status: 201 });
+  try {
+    const sub = await createSubscription({
+      ...parsed.data,
+      userId,
+      nextBillingDate: new Date(parsed.data.nextBillingDate),
+      amount: parsed.data.amount.toString(),
+    });
+    return NextResponse.json(sub, { status: 201 });
+  } catch (err) {
+    console.error("createSubscription error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Database error" },
+      { status: 500 }
+    );
+  }
 }

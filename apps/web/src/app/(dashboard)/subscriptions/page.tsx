@@ -35,7 +35,10 @@ export default function SubscriptionsPage() {
       toast.success("Abonelik eklendi");
       fetchSubscriptions();
     } else {
-      toast.error("Bir hata oluştu");
+      const body = await res.json().catch(() => ({}));
+      const message = body?.error ?? "Bir hata oluştu";
+      toast.error(typeof message === "string" ? message : "Bir hata oluştu");
+      throw new Error(typeof message === "string" ? message : "Request failed");
     }
   }
 

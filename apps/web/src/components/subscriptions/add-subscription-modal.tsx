@@ -76,6 +76,17 @@ export function AddSubscriptionModal({ open, onClose, onAdd }: AddSubscriptionMo
       onClose();
       setQuery("");
       setSelected(null);
+      setForm({
+        name: "",
+        category: "Diğer",
+        color: "#6366f1",
+        amount: 0,
+        currency: "TRY",
+        billingCycle: "monthly",
+        nextBillingDate: new Date().toISOString().split("T")[0],
+      });
+    } catch {
+      // error already shown via toast in handleAdd
     } finally {
       setLoading(false);
     }
