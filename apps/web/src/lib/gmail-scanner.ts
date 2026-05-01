@@ -140,7 +140,8 @@ export async function scanGmailForSubscriptions(
       if (!senderMatch) continue;
       if (seenDomains.has(senderMatch.domain)) continue;
 
-      const combined = `${subject} ${from}`;
+      const snippet = detail.data.snippet || "";
+      const combined = `${subject} ${from} ${snippet}`;
       const extracted = extractAmount(combined);
 
       const service = getServiceByDomain(senderMatch.domain);
