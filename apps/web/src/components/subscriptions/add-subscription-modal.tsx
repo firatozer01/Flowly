@@ -144,30 +144,27 @@ export function AddSubscriptionModal({ open, onClose, onAdd }: AddSubscriptionMo
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
-                        className="absolute top-full left-0 right-0 mt-2 glass rounded-xl border border-white/15 overflow-hidden z-10"
+                        className="absolute top-full left-0 right-0 mt-1.5 rounded-xl border border-white/10 overflow-hidden z-10 shadow-xl" style={{ background: "rgba(20,20,35,0.97)" }}
                       >
                         {suggestions.map((s) => (
                           <button
                             key={s.id}
                             type="button"
                             onClick={() => selectService(s)}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-left"
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 transition-colors text-left"
                           >
-                            <div className="w-8 h-8 rounded-lg overflow-hidden glass flex items-center justify-center flex-shrink-0">
-                              <ServiceLogo
-                                domain={s.domain}
-                                name={s.name}
-                                color={s.color}
-                                size={28}
-                                className="object-contain"
-                              />
+                            <ServiceLogo
+                              domain={s.domain}
+                              name={s.name}
+                              color={s.color}
+                              size={32}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white text-sm font-medium leading-tight">{s.name}</div>
+                              <div className="text-white/40 text-xs leading-tight">{s.category}</div>
                             </div>
-                            <div className="flex-1">
-                              <div className="text-white text-sm font-medium">{s.name}</div>
-                              <div className="text-white/40 text-xs">{s.category}</div>
-                            </div>
-                            <div className="text-right text-xs text-white/40">
-                              ≈ {s.typical_price_try.toFixed(2)} ₺
+                            <div className="text-xs text-white/50 flex-shrink-0">
+                              ≈ {s.typical_price_try.toFixed(0)} ₺
                             </div>
                           </button>
                         ))}
