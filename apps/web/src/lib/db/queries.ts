@@ -1,6 +1,6 @@
 import { db } from "./index";
 import { subscriptions, gmailTokens } from "./schema";
-import { eq, and, desc, gte } from "drizzle-orm";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
 import type { NewSubscription } from "./schema";
 
 export async function getSubscriptionsByUser(userId: string) {
