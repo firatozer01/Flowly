@@ -11,6 +11,14 @@ export async function getSubscriptionsByUser(userId: string) {
     .orderBy(desc(subscriptions.nextBillingDate));
 }
 
+export async function getSubscriptionDomainsByUser(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ domain: subscriptions.domain })
+    .from(subscriptions)
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.isActive, true)));
+  return rows.map((r) => r.domain).filter(Boolean) as string[];
+}
+
 export async function createSubscription(data: NewSubscription) {
   const [created] = await db.insert(subscriptions).values(data).returning();
   return created;

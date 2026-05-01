@@ -14,8 +14,11 @@ export interface ScannedSubscription {
 }
 
 const BILLING_PATTERNS = [
-  /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s*(TL|₺|TRY|USD|\$|EUR|€)/gi,
-  /(TL|₺|TRY|USD|\$|EUR|€)\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/gi,
+  /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)\s*(TL|₺|TRY|USD|\$|EUR|€)/gi,
+  /(TL|₺|TRY|USD|\$|EUR|€)\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)/gi,
+  /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)\s*(?:USD|TRY|EUR)/gi,
+  /US\$\s*(\d+(?:[.,]\d{1,2})?)/gi,
+  /total[:\s]+(?:USD|TRY|EUR|TL|₺|\$|€)?\s*(\d+(?:[.,]\d{1,2})?)/gi,
 ];
 
 const SENDER_PATTERNS = [
@@ -62,7 +65,9 @@ const SENDER_PATTERNS = [
 ];
 
 function extractAmount(text: string): { amount: number; currency: string } | null {
-  for (const pattern of BILLING_PATTERNS) {
+  // Pattern 0 & 1: number+currency / currency+number
+  for (let i = 0; i < 2; i++) {
+    const pattern = BILLING_PATTERNS[i];
     pattern.lastIndex = 0;
     const match = pattern.exec(text);
     if (match) {
@@ -71,13 +76,45 @@ function extractAmount(text: string): { amount: number; currency: string } | nul
       const amount = parseFloat(amountStr);
       if (!isNaN(amount) && amount > 0 && amount < 100000) {
         const currency =
-          currencyStr.includes("$") || currencyStr.toUpperCase() === "USD"
-            ? "USD"
-            : currencyStr.includes("€") || currencyStr.toUpperCase() === "EUR"
-            ? "EUR"
-            : "TRY";
+          currencyStr.includes("$") || currencyStr.toUpperCase().includes("USD") ? "USD"
+          : currencyStr.includes("€") || currencyStr.toUpperCase().includes("EUR") ? "EUR"
+          : "TRY";
         return { amount, currency };
       }
+    }
+  }
+  // Pattern 2: bare number + currency word
+  {
+    const pattern = BILLING_PATTERNS[2];
+    pattern.lastIndex = 0;
+    const match = pattern.exec(text);
+    if (match) {
+      const amount = parseFloat(match[1].replace(/\./g, "").replace(",", "."));
+      const upper = text.toUpperCase();
+      const currency = upper.includes("USD") ? "USD" : upper.includes("EUR") ? "EUR" : "TRY";
+      if (!isNaN(amount) && amount > 0 && amount < 100000) return { amount, currency };
+    }
+  }
+  // Pattern 3: US$20.00
+  {
+    const pattern = BILLING_PATTERNS[3];
+    pattern.lastIndex = 0;
+    const match = pattern.exec(text);
+    if (match) {
+      const amount = parseFloat(match[1].replace(",", "."));
+      if (!isNaN(amount) && amount > 0 && amount < 100000) return { amount, currency: "USD" };
+    }
+  }
+  // Pattern 4: total: 20.00
+  {
+    const pattern = BILLING_PATTERNS[4];
+    pattern.lastIndex = 0;
+    const match = pattern.exec(text);
+    if (match) {
+      const amount = parseFloat(match[1].replace(",", "."));
+      const upper = text.toUpperCase();
+      const currency = upper.includes("USD") ? "USD" : upper.includes("EUR") ? "EUR" : "TRY";
+      if (!isNaN(amount) && amount > 0 && amount < 100000) return { amount, currency };
     }
   }
   return null;

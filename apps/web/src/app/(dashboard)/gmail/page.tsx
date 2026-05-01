@@ -68,9 +68,12 @@ export default function GmailPage() {
       setScanned(data.items || []);
       setImported(true);
       if (data.imported > 0) {
-        toast.success(`${data.imported} abonelik içe aktarıldı`);
+        const skippedMsg = data.skipped > 0 ? `, ${data.skipped} atlandı` : "";
+        toast.success(`${data.imported} abonelik içe aktarıldı${skippedMsg}`);
       } else if (data.found === 0) {
         toast.info("Fatura e-postası bulunamadı");
+      } else {
+        toast.info(`${data.found} e-posta bulundu ama hepsi zaten ekli veya fiyatsız`);
       }
     } catch {
       toast.error("Bir hata oluştu");
