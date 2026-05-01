@@ -35,6 +35,30 @@ const SENDER_PATTERNS = [
   { domain: "slack.com", name: "Slack" },
   { domain: "zoom.us", name: "Zoom" },
   { domain: "duolingo.com", name: "Duolingo" },
+  { domain: "anthropic.com", name: "Claude" },
+  { domain: "openai.com", name: "ChatGPT" },
+  { domain: "canva.com", name: "Canva" },
+  { domain: "dropbox.com", name: "Dropbox" },
+  { domain: "discord.com", name: "Discord" },
+  { domain: "twitter.com", name: "X Premium" },
+  { domain: "x.com", name: "X Premium" },
+  { domain: "linkedin.com", name: "LinkedIn" },
+  { domain: "grammarly.com", name: "Grammarly" },
+  { domain: "disneyplus.com", name: "Disney+" },
+  { domain: "hbo.com", name: "HBO Max" },
+  { domain: "evernote.com", name: "Evernote" },
+  { domain: "1password.com", name: "1Password" },
+  { domain: "lastpass.com", name: "LastPass" },
+  { domain: "setapp.com", name: "Setapp" },
+  { domain: "todoist.com", name: "Todoist" },
+  { domain: "trello.com", name: "Trello" },
+  { domain: "atlassian.com", name: "Atlassian" },
+  { domain: "jetbrains.com", name: "JetBrains" },
+  { domain: "twitch.tv", name: "Twitch" },
+  { domain: "cursor.sh", name: "Cursor" },
+  { domain: "vercel.com", name: "Vercel" },
+  { domain: "digitalocean.com", name: "DigitalOcean" },
+  { domain: "aws.amazon.com", name: "AWS" },
 ];
 
 function extractAmount(text: string): { amount: number; currency: string } | null {
@@ -82,12 +106,13 @@ export async function scanGmailForSubscriptions(
   const gmail = google.gmail({ version: "v1", auth });
 
   const knownSenders = SENDER_PATTERNS.map((p) => `from:${p.domain}`).join(" OR ");
-  const query = `subject:(fatura OR ödeme OR receipt OR invoice OR subscription OR renewed OR billing) newer_than:90d`;
+  const subjectQuery = `subject:(fatura OR ödeme OR receipt OR invoice OR subscription OR renewed OR billing OR "thank you for your purchase" OR "your order")`;
+  const query = `(${knownSenders}) OR (${subjectQuery}) newer_than:180d`;
 
   const listRes = await gmail.users.messages.list({
     userId: "me",
     q: query,
-    maxResults: 50,
+    maxResults: 100,
   });
 
   const messages = listRes.data.messages || [];
