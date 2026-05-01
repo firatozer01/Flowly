@@ -1,17 +1,17 @@
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { subscriptions } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { getSubscriptionsByUser } from "@/lib/db/queries";
 import { StatsCards } from "@/components/dashboard/stats-card";
 import { SubscriptionCard } from "@/components/subscriptions/subscription-card";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const { userId } = await auth();
-  let subs: typeof subscriptions.$inferSelect[] = [];
+  let subs: Awaited<ReturnType<typeof getSubscriptionsByUser>> = [];
 
   if (userId) {
     try {
-      subs = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+      subs = await getSubscriptionsByUser(userId);
     } catch (err) {
       console.error("DB error on dashboard:", err);
     }
