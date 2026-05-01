@@ -63,9 +63,8 @@ export function SubscriptionCard({ subscription, onDelete }: SubscriptionCardPro
 
         {onDelete && (
           <motion.button
-            initial={{ opacity: 0 }}
             whileHover={{ scale: 1.1 }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg hover:bg-red-500/20 text-white/30 hover:text-red-400"
+            className="p-2 rounded-lg hover:bg-red-500/20 text-white/20 hover:text-red-400 transition-colors flex-shrink-0"
             onClick={() => onDelete(subscription.id)}
           >
             <Trash2 size={16} />
